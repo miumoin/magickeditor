@@ -2,7 +2,7 @@ function magickShow() {
 
 	var json = json_decode(document.getElementById('magickData').innerHTML);
 	var layers = json.layers;
-	var preview = '<img src="'+json.background.image+'" id="magickBackground" style="position: absolute; left: 0px; top: 0px; width: 600px; z-index: 0">';
+	var preview = '<img src="'+magickBase+'?load_image='+json.background.image+'" id="magickBackground" style="position: absolute; left: 0px; top: 0px; width: 600px; z-index: 0">';
 	var list = "";
 	var i = 0;
 	while( i < layers.length ) {
@@ -12,13 +12,17 @@ function magickShow() {
 			else if(layers[i].type == 'text') list += 'text placeholder';
 		list += '</td></tr>';
 		
-		preview += '<img src="'+magickBase+'/?magick_image='+encodeURIComponent(json_encode(layers[i]))+'" id="magickElement'+i+'" style="position: absolute; left: '+layers[i].x+'px; top: '+layers[i].y+'px; width: '+layers[i].w+'px; height: '+layers[i].h+'px; z-index: '+(i+1)+';">';
+		preview += '<img src="'+magickBase+'?magick_image='+encodeURIComponent(json_encode(layers[i]))+'" id="magickElement'+i+'" style="position: absolute; left: '+layers[i].x+'px; top: '+layers[i].y+'px; width: '+layers[i].w+'px; height: '+layers[i].h+'px; z-index: '+(i+1)+';">';
 		i++;
 	}
 
 	document.getElementById('magickElements').innerHTML = preview;
 	document.getElementById('magickList').innerHTML = list;
 	
+	//initiating color picker
+	$(".colorpicker").spectrum({
+		preferredFormat: "rgb"
+	});
 	
 	//initiating sliders
 	$( "#text_rotation_slider, #text_bending_slider, #image_rotation_slider, #image_bending_slider" ).slider({
@@ -47,7 +51,7 @@ function refreshMagickElement() {
 	}
 	document.getElementById('magickData').innerHTML = json_encode(json);
 	
-	document.getElementById('magickElement'+id).src = magickBase+'/?magick_image='+encodeURIComponent(json_encode(json.layers[id]));
+	document.getElementById('magickElement'+id).src = magickBase+'?magick_image='+encodeURIComponent(json_encode(json.layers[id]));
 }
 
 function startMagick( id ) {
@@ -57,6 +61,10 @@ function startMagick( id ) {
 	var json = json_decode(document.getElementById('magickData').innerHTML);
 	var layers = json.layers;
 	
+	//hiding input forms
+	document.getElementById('magick_layer_edit_image').style.display = 'none';
+	document.getElementById('magick_layer_edit_text').style.display = 'none';
+	
 	//Generating the input form
 	if(layers[id].type == 'text') {
 		
@@ -64,11 +72,14 @@ function startMagick( id ) {
 		document.getElementById('magick_text').value = layers[id].text;
 		document.getElementById('magick_text_stroke').value = layers[id].stroke;
 		document.getElementById('magick_text_color').value = layers[id].color;
+		$("#magick_text_stroke").spectrum({color: layers[id].stroke, preferredFormat: "rgb"});
+		$("#magick_text_color").spectrum({color: layers[id].color, preferredFormat: "rgb"});
 		$( "#text_rotation_slider" ).slider( "value", layers[id].r );
 		$( "#text_bending_slider" ).slider( "value", layers[id].b );
 		
 		//Hide Image Layer Input form
-		//Display Text Layer Input form		
+		//Display Text Layer Input form	
+		$( '#magick_layer_edit_text').toggle();	
 	}
 	else if(layers[id].type == 'image') {
 		
@@ -79,6 +90,7 @@ function startMagick( id ) {
 		
 		//Hide Text Layer Input form
 		//Display Image Layer Input form
+		$('#magick_layer_edit_image').toggle();
 	}
 
 	//Add cropper
@@ -145,16 +157,62 @@ function magick_new_layer(type) {
 	startMagick(id);
 }
 
-function upload_background_image(file, preview_div, uploadUrl, base)
+//Upload the background
+function upload_background_image(file, uploadUrl, base)
 {
-	magick_upload(file, preview_div, uploadUrl, base, 'background_image_uploaded');	
+	document.getElementById("backgroundImageUploadStatus").innerHTML = "uploading...";
+	magick_upload(file, uploadUrl, base, 'background_image_uploaded');	
+}
+
+function background_image_uploaded( response, base ) {
+	var json = json_decode(document.getElementById('magickData').innerHTML);
+	json.background.image = response;
+	document.getElementById('magickData').innerHTML = json_encode(json);
+	document.getElementById('magickBackground').src = magickBase+'?load_image='+response;
+	document.getElementById("backgroundImageUploadStatus").innerHTML = "";
+}
+
+//Upload a image layer
+function upload_magick_image( file, uploadUrl, base ) {
+	
+	document.getElementById("magickImageUploadStatus").innerHTML = "uploading...";
+	magick_upload(file, uploadUrl, base, 'magick_image_uploaded');	
+}
+
+function magick_image_uploaded( response ) {
+	
+	magick_update_element( 'file', response, 'image' );
+	document.getElementById("magickImageUploadStatus").innerHTML = "";
+}
+
+function magick_update_element( field, value, type ) {
+	
+	var id = document.getElementById('magickNow').innerHTML;
+	var json = json_decode(document.getElementById('magickData').innerHTML);
+	if(json.layers[id].type == type) {
+		
+		json.layers[id][field] = value;
+		document.getElementById('magickData').innerHTML = json_encode(json);
+		document.getElementById('magickElement'+id).src = magickBase+'?magick_image='+encodeURIComponent(json_encode(json.layers[id]));	
+	}
+}
+
+//Upload Text Font
+function upload_magick_font( file, uploadUrl, base ) {
+	
+	document.getElementById("magickFontUploadStatus").innerHTML = "uploading...";
+	magick_upload(file, uploadUrl, base, 'magick_font_uploaded');	
+}
+
+function magick_font_uploaded( response ) {
+	
+	magick_update_element( 'font', response, 'text' );
+	document.getElementById("magickFontUploadStatus").innerHTML = "";
 }
 
 //Useful Functions
-function magick_upload(image, preview_div, uploadUrl, base, callback)
+function magick_upload(image, uploadUrl, base, callback)
 {
-	//document.getElementById(preview_div).innerHTML = "<img src='"+base+"/files/img/loader.gif'>";
-	
 	// Get the selected files from the input.
 	var files = image.files;
 	
@@ -165,10 +223,10 @@ function magick_upload(image, preview_div, uploadUrl, base, callback)
 	for (var i = 0; i < files.length; i++) {
 	  var file = files[i];
 
-	  // Check the file type.
+	  /*// Check the file type.
 	  if (!file.type.match('image.*')) {
 		continue;
-	  }
+	  }*/
 
 	  // Add the file to the request.
 	  formData.append('photos[]', file, file.name);
@@ -184,11 +242,9 @@ function magick_upload(image, preview_div, uploadUrl, base, callback)
 	// Set up a handler for when the request finishes.
 	xhr.onload = function () {
 	  if (xhr.status === 200) {
-		// File(s) uploaded.		
-		document.getElementById(preview_div).innerHTML = xhr.responseText;
 		
 		if(callback != '' ) {			
-			window[callback](preview_div, base);
+			window[callback](xhr.responseText, base);
 		}
 
 	  } else {

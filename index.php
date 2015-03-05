@@ -1,7 +1,7 @@
 <?php
-	include("magickeditor/php/magickeditor.php");
 	define('MAGICKBASE', 'http://localhost/magickeditor/index.php');
-	define('MAGICKDIRECTORY', 'files/uploads');
+	define('MAGICKDIRECTORY', 'magickeditor/files/uploads/');
+	include("magickeditor/php/magickeditor.php");	
 ?>
 <!DOCTYPE html>
 <html lang="en-us">
@@ -34,6 +34,9 @@
 		<!-- Latest compiled and minified JavaScript -->
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
 		
+		<script src="magickeditor/js/colorpicker/spectrum.js"></script>
+		<link rel="stylesheet" href="magickeditor/js/colorpicker/spectrum.css">
+		
 	</head>
 	<body>
 
@@ -47,7 +50,7 @@
 								'layers' => array(
 													array( 'type' => 'image', 'file' => 'twitter.png' ,'x' => 10, 'y' => 10, 'w' => 50, 'h' => 60, 'r' => 170, 'b' => 20, 't' => 0 ),
 													array( 'type' => 'image', 'file' => 'facebook.png' ,'x' => 60, 'y' => 20, 'w' => 50, 'h' => 60, 'r' => 210, 'b' => 30, 't' => 0 ),
-													array( 'type' => 'text', 'text' => 'hello world', 'font'=>'DJBTOOTSIEWOOTSIE.ttf', 'color'=>'red', 'stroke'=>'', 'x' => 160, 'y' => 20, 'w' => 50, 'h' => 60, 'r' => 50, 'b' => 30, 't' => 0 )
+													array( 'type' => 'text', 'text' => 'hello world', 'font'=>'DJBTOOTSIEWOOTSIE.tt', 'color'=>'', 'stroke'=>'', 'x' => 160, 'y' => 20, 'w' => 50, 'h' => 60, 'r' => 50, 'b' => 30, 't' => 0 )
 												)
 								);
 			?>

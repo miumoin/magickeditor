@@ -5,11 +5,18 @@
 	}
 	elseif(isset($_REQUEST['magick_background'])) {
 		
-		magical_transparent_image();
+		magick_transparent_image();
+	}
+	elseif(isset($_REQUEST['load_image'])) {
+		
+		magick_load_image();
 	}
 	elseif(isset($_REQUEST['process'])) {
 		
 		if($_REQUEST['process']=='upload_background_image') process_upload_background_image();
+		elseif($_REQUEST['process']=='upload_magick_image') process_upload_magick_image();
+		elseif($_REQUEST['process']=='upload_magick_font') process_upload_magick_font();
+		die();
 	}
 
 	function initiate_magickeditor($json) {
@@ -41,18 +48,20 @@
 					<a href="#" onclick="magick_new_layer('image'); return false;" class="btn btn-info">Image layer</a>
 					<a href="#" onclick="magick_new_layer('text'); return false;" class="btn btn-success">Text layer</a>
 					
+					<br>
 					<a href="#" onclick="javascript:document.getElementById('uploadBackgroundImage').click(); return false;"><strong>Upload Background</strong></a>
 													
 					<input id="uploadBackgroundImage" type="file" accept="image/*" name="background_image" 
-						onchange="javascript:upload_background_image(this, 'magickBackground', 
-						'<?php echo MAGICKBASE; ?>?process=upload_background_image&dir_to_store=<?php echo MAGICKDIRECTORY; ?>&', 
+						onchange="javascript:upload_background_image(this, 
+						'<?php echo MAGICKBASE; ?>?process=upload_background_image', 
 						'<?php echo MAGICKBASE; ?>');"
-					style="display:none"/>
+						style="display:none"/>
+					<span id="backgroundImageUploadStatus"></span>
 													
 				</div>
 			</div>
 			
-			<div id="magick_layer_edit_image" class="panel panel-primary">	
+			<div id="magick_layer_edit_image" class="panel panel-primary" style="display:none">	
 				<div class="panel-heading">
 					<h4>Image Layer</h4>
 				</div>
@@ -60,8 +69,15 @@
 				<div class="panel-body">
 					
 					<div class="form-group">
-						<label>Upload Image</label>
-						<input type="file" name="image" id="magick_image_file"><br>
+						
+						<label><a href="#" onclick="javascript:document.getElementById('uploadMagickImage').click(); return false;" class="btn btn-info"><strong>Upload Image</strong></a></label>
+														
+						<input id="uploadMagickImage" type="file" accept="image/*" name="magick_image" 
+							onchange="javascript:upload_magick_image(this, 
+							'<?php echo MAGICKBASE; ?>?process=upload_magick_image', 
+							'<?php echo MAGICKBASE; ?>');"
+							style="display:none"/>
+						<span id="magickImageUploadStatus"></span><br>
 						
 						<label>Rotation</label>
 						<div id="image_rotation_slider"></div>
@@ -73,7 +89,7 @@
 				</div>
 			</div>
 			
-			<div id="magick_layer_edit_text"class="panel panel-primary">	
+			<div id="magick_layer_edit_text"class="panel panel-primary" style="display:none">	
 				<div class="panel-heading">
 					<h4>Text Layer</h4>
 				</div>
@@ -82,16 +98,22 @@
 					
 					<div class="form-group">
 						<label>Text</label>
-						<input type="text" name="text" class="form-control" id="magick_text"><br>
+						<input type="text" name="text" class="form-control" id="magick_text" onchange="magick_update_element( 'text', this.value, 'text')"><br>
 						
-						<label>Font</label>
-						<input type="file" name="font" id="magick_text_font"><br>
+						<label><a href="#" onclick="javascript:document.getElementById('uploadMagickFont').click(); return false;" class="btn btn-info"><strong>Upload Font</strong></a></label>
+														
+						<input id="uploadMagickFont" type="file" name="magick_font" 
+							onchange="javascript:upload_magick_font(this, 
+							'<?php echo MAGICKBASE; ?>?process=upload_magick_font', 
+							'<?php echo MAGICKBASE; ?>');"
+							style="display:none"/>
+						<span id="magickFontUploadStatus"></span><br>
 						
 						<label>Stroke Color</label>
-						<input type="text" name="stroke" class="form-control" id="magick_text_stroke"><br>
+						<input type="text" name="stroke" class="form-control colorpicker" id="magick_text_stroke" onchange="magick_update_element( 'stroke', this.value, 'text')"><br>
 						
 						<label>Font Color</label>
-						<input type="text" name="color" class="form-control" id="magick_text_color"><br>
+						<input type="text" name="color" class="form-control colorpicker" id="magick_text_color" onchange="magick_update_element( 'color', this.value, 'text')"><br>
 						
 						<label>Rotation</label>
 						<div id="text_rotation_slider"></div>
@@ -133,26 +155,22 @@
 
 		if(($layer->type=='image') && (file_exists($layer->file))) {
 
-
-			//load the image into variable
+			//load the image into variable			
 			$im = load_magick_image($layer->file);
-
-
 		}
 		elseif($layer->type=='text') {
 
 			//load the font and create text image into a variable
-			$im = load_magick_text( $layer->text, $layer->font, 40, $layer->color, $layer->r, $layer->b, $layer->t, 0);
-			
+			$im = load_magick_text( $layer->text, $layer->font, 40, $layer->color, $layer->stroke, 0);			
 		}
-		
-		if( $layer->b != 0 ) {
+				
+		if( $layer->b != 0 ) {			
 			
 			$im->setImageMatte( TRUE );
 			$im->distortImage(Imagick::DISTORTION_ARC, array($layer->b), FALSE);
 		}
 		
-		if( $layer->r != 0 ) {
+		if( $layer->r != 0 ) {			
 			
 			$im->rotateImage(new ImagickPixel('none'), $layer->r);
 		}		
@@ -164,11 +182,12 @@
 
 	function load_magick_image($file) {
 
-		$im = new Imagick($file);
+		$im = new Imagick();		
+		$im->readImage($file);	
 		return $im;
 	}
 
-	function load_magick_text( $text, $font, $size, $color, $rotation, $bending, $tilting, $shade ) {
+	function load_magick_text( $text, $font, $size, $color, $stroke, $shade ) {
 
 		/* Create a new canvas object and a white image */
 		$im = new Imagick();
@@ -178,8 +197,10 @@
 
 		/* Set font size and font */
 		$draw->setFontSize($size);
-		$draw->setFont($font);
-		$draw->setFillColor( new ImagickPixel($color) );
+		//
+		if(is_file($font)) $draw->setFont($font);
+		if(trim($stroke) != "") $draw->setStrokeColor( new ImagickPixel($stroke) );
+		if(trim($color)!="") $draw->setFillColor( new ImagickPixel($color) );
 		
 		$textmetric = $im->queryFontMetrics($draw, $text);
 		$baseline = $textmetric['boundingBox']['y2'];		
@@ -218,7 +239,7 @@
 		$imagick->destroy();
 	}
 	
-	function magical_transparent_image() {
+	function magick_transparent_image() {
 		
 		$im = new Imagick();
 		$im->newImage(100, 100, (new ImagickPixel('transparent')));
@@ -229,22 +250,43 @@
 		echo $im;
 	}
 	
-	function process_upload_background_image() {
+	function magick_load_image() {
 		
-		echo "Hello"; die();
+		$im = new Imagick($_REQUEST['load_image']);
+		
+		header("Content-Type: image/png");
+		echo $im;
+	}
+	
+	function process_upload_background_image() {		
+		
 		$_FILES['image']=$_FILES['photos'];
 		$valid_exts = array('jpeg', 'jpg', 'png', 'gif'); // valid extensions
 		$path=upload_the_image(200 * 1024, "_background", $valid_exts);
 		echo $path;
 	}
 	
+	function process_upload_magick_image() {		
+		
+		$_FILES['image']=$_FILES['photos'];
+		$valid_exts = array('jpeg', 'jpg', 'png', 'gif'); // valid extensions
+		$path=upload_the_image(200 * 1024, "_image", $valid_exts);
+		echo $path;
+	}
+	
+	function process_upload_magick_font() {
+		
+		$_FILES['image']=$_FILES['photos'];
+		//var_dump($_FILES['image']);
+		$valid_exts = array('ttf'); // valid extensions
+		$path=upload_the_image(200 * 1024, "_font", $valid_exts);
+		echo $path;
+	}
+	
 	function upload_the_image($max_size, $prefix, $valid_exts) {		
 		
-		//$max_size = 200 * 1024; // max file size
-		$path = $_REQUEST['dir_to_store']."/"; // upload directory
-
-		//temp
-
+		$path = MAGICKDIRECTORY; // upload directory
+		
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		
 			if( ! empty($_FILES['image']) ) {
@@ -253,10 +295,12 @@
 				// looking for format and size validity
 				if (in_array($ext, $valid_exts) AND $_FILES['image']['size'][0] < $max_size*50) {
 					$path = $path . uniqid(). $prefix.rand(0,100).'.' .$ext;
+					
+					
 					// move uploaded file from temp to uploads directory
-					if (move_uploaded_file($_FILES['image']['tmp_name'][0], $path)) {         
+					if (move_uploaded_file($_FILES['image']['tmp_name'][0], $path)) {   
 						return $path;
-					}
+					} else echo $_FILES['image']['tmp_name'][0];
 				} else {
 					echo 'Invalid file!';
 				}
