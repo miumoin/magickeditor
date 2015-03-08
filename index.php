@@ -44,15 +44,11 @@
 			
 			<?php
 				$data = array(
-								'background' => array(
-														'image' => 'fantasy-boy.jpg'
-														),
-								'layers' => array(
-													array( 'type' => 'image', 'file' => 'twitter.png' ,'x' => 10, 'y' => 10, 'w' => 50, 'h' => 60, 'r' => 170, 'b' => 20, 't' => 0 ),
-													array( 'type' => 'image', 'file' => 'facebook.png' ,'x' => 60, 'y' => 20, 'w' => 50, 'h' => 60, 'r' => 210, 'b' => 30, 't' => 0 ),
-													array( 'type' => 'text', 'text' => 'hello world', 'font'=>'DJBTOOTSIEWOOTSIE.tt', 'color'=>'', 'stroke'=>'', 'x' => 160, 'y' => 20, 'w' => 50, 'h' => 60, 'r' => 50, 'b' => 30, 't' => 0 )
-												)
-								);
+								'background' => array( 
+														'image' => ''
+													),
+								'layers' => array()
+							);
 			?>
 
 			<?php initiate_magickeditor(json_encode($data)); ?>

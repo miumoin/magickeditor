@@ -84,6 +84,20 @@
 						
 						<label>Bending</label>
 						<div id="image_bending_slider"></div>
+
+						<br>
+						<label><input type="checkbox" id="image_bending_anticlock" onchange="javascript: if(this.checked==true) { magick_update_element('b_anticlock', 1, 'image') } else { magick_update_element('b_anticlock', 0, 'image') }"> Anti-clockwise bending</label>
+						<br>
+						<label><input type="checkbox" id="image_bending_manual_radius" onchange="javascript: if(this.checked==true) { magick_update_element('b_type', 'manual', 'image'); document.getElementById('image_manual_radius').style.display='block'; } else { magick_update_element('b_type', 'auto', 'image'); document.getElementById('image_manual_radius').style.display='none'; }"> Manual Radius</label>
+
+						<div id="image_manual_radius" style="display:none">
+							<label>Top Radius (pixel)</label>
+							<input type="text" id="magick_image_top_radius" class="form-control" onchange="magick_update_element('b_top_rad', this.value, 'text')">
+
+							<label>Bottom Radius (pixel)</label>
+							<input type="text" id="magick_image_bottom_radius" class="form-control" onchange="magick_update_element('b_bottom_rad', this.value, 'text')">
+						</div>
+
 					</div>
 					
 				</div>
@@ -115,12 +129,26 @@
 						<label>Font Color</label>
 						<input type="text" name="color" class="form-control colorpicker" id="magick_text_color" onchange="magick_update_element( 'color', this.value, 'text')"><br>
 						
-						<label>Rotation</label>
+						<h3>Rotate</h3>
+						<label>Degree of Rotation</label>
 						<div id="text_rotation_slider"></div>
 						
-						<label>Bending</label>
+						<h3>Bend</h3>
+						<label>Degree of Bending</label>
 						<div id="text_bending_slider"></div>
-						
+
+						<br>
+						<label><input type="checkbox" id="text_bending_anticlock" onchange="javascript: if(this.checked==true) { magick_update_element('b_anticlock', 1, 'text') } else { magick_update_element('b_anticlock', 0, 'text') }"> Anti-clockwise bending</label>
+						<br>
+						<label><input type="checkbox" id="text_bending_manual_radius" onchange="javascript: if(this.checked==true) { magick_update_element('b_type', 'manual', 'text'); document.getElementById('text_manual_radius').style.display='block'; } else { magick_update_element('b_type', 'auto', 'text'); document.getElementById('text_manual_radius').style.display='none'; }"> Manual Radius</label>
+
+						<div id="text_manual_radius" style="display:none">
+							<label>Top Radius (pixel)</label>
+							<input type="text" id="magick_text_top_radius" class="form-control" onchange="magick_update_element('b_top_rad', this.value, 'text')">
+
+							<label>Bottom Radius (pixel)</label>
+							<input type="text" id="magick_text_bottom_radius" class="form-control" onchange="magick_update_element('b_bottom_rad', this.value, 'text')">
+						</div>
 						
 					</div>
 					
@@ -141,7 +169,7 @@
 	
 	
 
-	<div id="magickData"><?php echo $json; ?></div>
+	<div id="magickData" style="display:none"><?php echo $json; ?></div>
 	<div id="magickNow"></div>
 	<script> magickShow(); </script>
 	
@@ -151,7 +179,6 @@
 	function preview_magick_image() {
 
 		$layer = json_decode(urldecode($_REQUEST['magick_image']));
-
 
 		if(($layer->type=='image') && (file_exists($layer->file))) {
 
@@ -163,20 +190,35 @@
 			//load the font and create text image into a variable
 			$im = load_magick_text( $layer->text, $layer->font, 40, $layer->color, $layer->stroke, 0);			
 		}
-				
-		if( $layer->b != 0 ) {			
+		
+		$im->setImageMatte( TRUE );
+
+		
+		if( $layer->b != 0 ) {		
+
+			if((isset($layer->b_anticlock)) && ($layer->b_anticlock == 1)) {
+
+				$im->rotateImage(new ImagickPixel('none'), 180);		
+				$layer->r = $layer->r+180;
+			}
 			
-			$im->setImageMatte( TRUE );
-			$im->distortImage(Imagick::DISTORTION_ARC, array($layer->b), FALSE);
+			if((isset($layer->b_type)) && ($layer->b_type == 'manual')) {
+
+				$bend_degrees = array($layer->b, 0, $layer->b_top_rad, $layer->b_bottom_rad);
+			}
+			else $bend_degrees = array($layer->b);
+
+			$im->distortImage(Imagick::DISTORTION_ARC, $bend_degrees, TRUE);
 		}
+
 		
 		if( $layer->r != 0 ) {			
 			
 			$im->rotateImage(new ImagickPixel('none'), $layer->r);
-		}		
+		}
 
 		//display the image whether it is text or image
-		header("Content-Type: image/png");		
+		header("Content-Type: image/jpeg");		
 		echo $im;
 	}
 
@@ -224,6 +266,7 @@
 	}
 	
 	function distort_image( $file, $degree ) {
+
 		$textOnly = new Imagick($file);
 		$textOnly->setImageMatte( TRUE );
 		$textOnly->distortImage(Imagick::DISTORTION_ARC, array($degree), FALSE);
@@ -252,8 +295,8 @@
 	
 	function magick_load_image() {
 		
-		$im = new Imagick($_REQUEST['load_image']);
-		
+		if( !file_exists( $_REQUEST['load_image'] ) ) $_REQUEST['load_image'] = MAGICKDIRECTORY.'tshirt-default.jpg';	
+		$im = new Imagick($_REQUEST['load_image']);		
 		header("Content-Type: image/png");
 		echo $im;
 	}

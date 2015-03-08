@@ -76,6 +76,27 @@ function startMagick( id ) {
 		$("#magick_text_color").spectrum({color: layers[id].color, preferredFormat: "rgb"});
 		$( "#text_rotation_slider" ).slider( "value", layers[id].r );
 		$( "#text_bending_slider" ).slider( "value", layers[id].b );
+
+		//checking checkbox if anticlock bending enabled
+		if(layers[id].b_anticlock == 1) document.getElementById('text_bending_anticlock').checked = true;
+		else document.getElementById('text_bending_anticlock').checked = false;
+
+		//Manual Radius Inputs
+		document.getElementById('magick_text_top_radius').value = layers[id].b_top_rad;
+		document.getElementById('magick_text_bottom_radius').value = layers[id].b_bottom_rad;
+
+		//Checking checkbox of bending type if manual radius enabled
+		if(layers[id].b_type == 'manual') {
+
+			document.getElementById('text_bending_manual_radius').checked = true;
+			document.getElementById('text_manual_radius').style.display = 'block';
+		}
+		else { 
+
+			document.getElementById('text_bending_manual_radius').checked = false;
+			document.getElementById('text_manual_radius').style.display = 'none';
+		}
+
 		
 		//Hide Image Layer Input form
 		//Display Text Layer Input form	
@@ -87,6 +108,28 @@ function startMagick( id ) {
 		
 		$( "#image_rotation_slider" ).slider( "value", layers[id].r );
 		$( "#image_bending_slider" ).slider( "value", layers[id].b );
+
+
+		//checking checkbox if anticlock bending enabled
+		if(layers[id].b_anticlock == 1) document.getElementById('image_bending_anticlock').checked = true;
+		else document.getElementById('image_bending_anticlock').checked = false;
+
+		//Manual Radius Inputs
+		document.getElementById('magick_image_top_radius').value = layers[id].b_top_rad;
+		document.getElementById('magick_image_bottom_radius').value = layers[id].b_bottom_rad;
+
+		//Checking checkbox of bending type if manual radius enabled
+		if(layers[id].b_type == 'manual') {
+
+			document.getElementById('image_bending_manual_radius').checked = true;
+			document.getElementById('image_manual_radius').style.display = 'block';
+		}
+		else { 
+
+			document.getElementById('image_bending_manual_radius').checked = false;
+			document.getElementById('image_manual_radius').style.display = 'none';
+		}
+
 		
 		//Hide Text Layer Input form
 		//Display Image Layer Input form
@@ -138,6 +181,10 @@ function magick_new_layer(type) {
 	json.layers[id].r = 0;
 	json.layers[id].b = 0;
 	json.layers[id].t = 0;
+	json.layers[id].b_anticlock = 0;
+	json.layers[id].b_type = 'auto';
+	json.layers[id].b_top_rad = 50;
+	json.layers[id].b_bottom_rad = 20;
 	
 	if(type == 'text') {
 		
