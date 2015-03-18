@@ -31,7 +31,7 @@
 				
 				<div class="panel-body">
 					<div id="magicalPart" style="position: relative;">
-						<img src="<?php echo MAGICKBASE; ?>/?magick_background" id="magickArea" width="600"/>
+						<img src="<?php echo MAGICKBASE; ?>/?magick_background" id="magickArea" width="600" height="800"/>
 						
 						<div id="magickElements" style="position: absolute; top: 0px; left: 0px;"></div>
 					</div>
@@ -169,8 +169,8 @@
 	
 	
 
-	<div id="magickData" style="display:none"><?php echo $json; ?></div>
-	<div id="magickNow"></div>
+	<textarea id="magickData" name="magickData" style="display:none"><?php echo $json; ?></textarea>
+	<div id="magickNow" style="display:none"></div>
 	<script> magickShow(); </script>
 	
 <?php

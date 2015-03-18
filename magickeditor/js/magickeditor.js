@@ -1,19 +1,18 @@
 function magickShow() {
 
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	var layers = json.layers;
 	var preview = '<img src="'+magickBase+'?load_image='+json.background.image+'" id="magickBackground" style="position: absolute; left: 0px; top: 0px; width: 600px; z-index: 0">';
 	var list = "";
-	var i = 0;
-	while( i < layers.length ) {
+	var i = layers.length;
+	while( i > 0 ) {
 
-		list += '<tr><td><a href="#" onclick="javascript:startMagick(\''+i+'\'); return false">';
-			if(layers[i].type == 'image') list += 'image placeholder';
-			else if(layers[i].type == 'text') list += 'text placeholder';
+		i--;
+		list += '<tr><td>';
+		list += magick_layer_element(i, layers[i].type, layers.length);			
 		list += '</td></tr>';
 		
 		preview += '<img src="'+magickBase+'?magick_image='+encodeURIComponent(json_encode(layers[i]))+'" id="magickElement'+i+'" style="position: absolute; left: '+layers[i].x+'px; top: '+layers[i].y+'px; width: '+layers[i].w+'px; height: '+layers[i].h+'px; z-index: '+(i+1)+';">';
-		i++;
 	}
 
 	document.getElementById('magickElements').innerHTML = preview;
@@ -34,10 +33,132 @@ function magickShow() {
 	});
 }
 
+function magick_layer_element(i, type, total) {
+
+	
+	var html = '<div class="row">';
+
+			html += '<div class="col-sm-6">';
+				html += '<a href="#" onclick="javascript:startMagick(\''+i+'\'); return false">';
+					html += '<button type="button" class="btn btn-default btn-sm" >';					
+						if(type == 'image') {
+
+							html += '<span class="glyphicon glyphicon-picture"  style="color:black" aria-hidden="true"></span>';
+							html += '<span> image</span>';
+						}
+						else if(type == 'text') {
+
+							html += '<span class="glyphicon glyphicon-text-size"  style="color:black" aria-hidden="true"></span>';
+							html += '<span> text</span>';
+						}
+					
+					html += '</button>';
+				html += '</a>';
+			html += '</div>';
+
+			html += '<div class="col-sm-2">';
+				if(i<(total-1)) {
+					html += '<a href="#" onclick="magick_rearrange(\''+i+'\', \'up\'); return false;">';
+						html += '<button type="button" class="btn btn-default btn-sm" >	';	
+					  		html += '<span class="glyphicon glyphicon-menu-up" aria-hidden="true" style="color:black"></span>';
+					  	html += '</button>';
+					html += '</a>';
+				}
+			html += '</div>';
+
+			html += '<div class="col-sm-2">';
+				if(i>0) {
+					html += '<a href="#" onclick="magick_rearrange(\''+i+'\', \'down\'); return false;">';
+					  	html += '<button type="button" class="btn btn-default btn-sm" >	';	
+					  		html += '<span class="glyphicon glyphicon-menu-down" aria-hidden="true" style="color:black"></span>';
+					  	html += '</button>';
+					html += '</a>';
+				}
+			html += '</div>';
+			
+			html += '<div class="col-sm-2">';
+				html += '<a href="#" onclick="magick_rearrange(\''+i+'\', \'remove\'); return false;">';
+				  	html += '<button type="button" class="btn btn-default btn-sm" >	';	
+				  		html += '<span class="glyphicon glyphicon-remove" aria-hidden="true" style="color:black"></span>';
+					html += '</button>';
+				html += '</a>';
+			html += '</div>';
+					
+	html += '</div>';
+	return html;
+}
+
+function magick_rearrange(id, option){
+	
+	var json = json_decode(document.getElementById('magickData').value);
+	var layers = json.layers;
+	var i = 0;
+	var j = 0;
+	var new_layers = [];
+
+	//Hide both edit panel
+	document.getElementById('magick_layer_edit_image').style.display = 'none';
+	document.getElementById('magick_layer_edit_text').style.display = 'none';
+
+	//destroy jcrop
+	if ($('#magickArea').data('Jcrop')) {
+	   $('#magickArea').data('Jcrop').destroy();
+	}
+
+	if(option == 'remove') {
+
+		while(i<layers.length) {
+
+			if(id != i) {
+
+				new_layers[j] = layers[i];
+				j++;
+			}
+			i++;
+		}
+	}
+	else if(option == 'up') {
+
+		while(i<layers.length) {
+
+			if(id == i) {
+
+				new_layers[j] = layers[i+1];
+				new_layers[j+1] = layers[i];
+				i++;
+				j++;				
+			}
+			else new_layers[j] = layers[i];
+			j++;
+			i++;
+		}
+	}
+	else if(option == 'down') {
+
+		while(i<layers.length) {
+
+			if((id-1) == i) {
+
+				new_layers[j] = layers[i+1];
+				new_layers[j+1] = layers[i];
+				i++;
+				j++;				
+			}
+			else new_layers[j] = layers[i];
+			j++;
+			i++;
+		}
+	}
+	
+	json.layers = new_layers;
+	document.getElementById('magickData').value = json_encode(json);
+	magickShow();
+}
+
 function refreshMagickElement() {
 	
 	var id = document.getElementById('magickNow').innerHTML;
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	
 	if(json.layers[id].type == 'image') {
 		
@@ -49,7 +170,7 @@ function refreshMagickElement() {
 		json.layers[id].r = $( "#text_rotation_slider" ).slider( 'value' );
 		json.layers[id].b = $( "#text_bending_slider" ).slider( 'value' );
 	}
-	document.getElementById('magickData').innerHTML = json_encode(json);
+	document.getElementById('magickData').value = json_encode(json);
 	
 	document.getElementById('magickElement'+id).src = magickBase+'?magick_image='+encodeURIComponent(json_encode(json.layers[id]));
 }
@@ -58,7 +179,7 @@ function startMagick( id ) {
 
 	document.getElementById('magickNow').innerHTML = id;
 
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	var layers = json.layers;
 	
 	//hiding input forms
@@ -155,18 +276,18 @@ function magick_coords( c ) {
 	document.getElementById('magickElement'+id).style.width = c.w+'px';
 	document.getElementById('magickElement'+id).style.height = c.h+'px';
 	
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	json.layers[id].x = c.x;
 	json.layers[id].y = c.y;
 	json.layers[id].w = c.w;
 	json.layers[id].h = c.h;
-	document.getElementById('magickData').innerHTML = json_encode(json);
+	document.getElementById('magickData').value = json_encode(json);
 }
 
 //Creating New Layer
 function magick_new_layer(type) {
 	
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	var layers = json.layers;
 	var id = layers.length;
 	
@@ -199,7 +320,7 @@ function magick_new_layer(type) {
 	}
 	
 	document.getElementById('magickNow').innerHTML = id;
-	document.getElementById('magickData').innerHTML = json_encode(json);
+	document.getElementById('magickData').value = json_encode(json);
 	magickShow();
 	startMagick(id);
 }
@@ -212,9 +333,9 @@ function upload_background_image(file, uploadUrl, base)
 }
 
 function background_image_uploaded( response, base ) {
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	json.background.image = response;
-	document.getElementById('magickData').innerHTML = json_encode(json);
+	document.getElementById('magickData').value = json_encode(json);
 	document.getElementById('magickBackground').src = magickBase+'?load_image='+response;
 	document.getElementById("backgroundImageUploadStatus").innerHTML = "";
 }
@@ -235,11 +356,11 @@ function magick_image_uploaded( response ) {
 function magick_update_element( field, value, type ) {
 	
 	var id = document.getElementById('magickNow').innerHTML;
-	var json = json_decode(document.getElementById('magickData').innerHTML);
+	var json = json_decode(document.getElementById('magickData').value);
 	if(json.layers[id].type == type) {
 		
 		json.layers[id][field] = value;
-		document.getElementById('magickData').innerHTML = json_encode(json);
+		document.getElementById('magickData').value = json_encode(json);
 		document.getElementById('magickElement'+id).src = magickBase+'?magick_image='+encodeURIComponent(json_encode(json.layers[id]));	
 	}
 }
